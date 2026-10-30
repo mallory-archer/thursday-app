@@ -26,11 +26,14 @@ def load_env(path: Path) -> None:
 def database_url() -> str:
     url = os.environ.get("DATABASE_URL", "").strip()
     if not url:
-        raise SystemExit("DATABASE_URL is not set.")
-    if "sslmode=" not in url:
-        separator = "&" if "?" in url else "?"
-        url = f"{url}{separator}sslmode=require"
-    return url
+        raise RuntimeError("DATABASE_URL is not set.")
+    if "sslmode=" in url:
+        return url
+    separator = "&" if "?" in url else "?"
+    # The private Railway hostname does not use the public proxy's SSL.
+    if ".railway.internal" in url:
+        return f"{url}{separator}sslmode=disable"
+    return f"{url}{separator}sslmode=require"
 
 
 @app.get("/")
