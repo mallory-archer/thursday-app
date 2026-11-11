@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Group assignments · Thursday studio</title>
+  <meta name="description" content="Example group assignments for thirty students across eight groups, with size, kind mix, and missing-kind summary.">
+  <!--
+    Example of what the backend renders.
+    Students: name, group number, and kind.
+    Summary: how many groups, how many students in each, each group's mix of kinds,
+    and how many groups are missing a kind.
+  -->
+  <style>
+    :root {
+      --bg: #e9e2d6;
+      --paper: #fbf8f3;
+      --ink: #1d1916;
+      --muted: #5c534b;
+      --faint: #8a7f74;
+      --line: #d8cec1;
+      --line-strong: #1d1916;
+      --complete: #1c5c40;
+      --complete-bg: #e7f3ec;
+      --missing: #6f3d0d;
+      --missing-bg: #f8efe3;
+      --research: #1a4f86;
+      --design: #a3471e;
+      --build: #265c42;
+      --facilitate: #5c4574;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 1.0625rem;
+      line-height: 1.5;
+    }
+
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      transform: translateY(-160%);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 8px 12px;
+      z-index: 2;
+    }
+
+    .skip:focus {
+      transform: none;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 36px 24px 72px;
+    }
+
+    a {
+      color: inherit;
+      text-underline-offset: 3px;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .page-head {
+      border-top: 4px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      padding: 26px 0 20px;
+      margin-bottom: 32px;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+    }
+
+    .lede {
+      max-width: 40rem;
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    .example-tag {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    section { margin-top: 40px; }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .section-lead {
+      margin: 0 0 18px;
+      max-width: 42rem;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .metrics div {
+      margin: 0;
+      padding: 16px 18px 14px 0;
+    }
+
+    .metrics div + div {
+      padding-left: 18px;
+      border-left: 1px solid var(--line);
+    }
+
+    .metrics dt {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .metrics dd {
+      margin: 4px 0 0;
+      font-family: var(--serif);
+      font-size: 2.6rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .metrics .unit {
+      font-family: var(--sans);
+      font-size: 1rem;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+
+    .metrics dd.fine {
+      margin: 8px 0 0;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      letter-spacing: 0;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .metrics .attention dd { color: var(--missing); }
+
+    .gaps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .gaps li {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .gaps .kind-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .gaps .detail {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .gaps .short .detail { color: var(--missing); }
+
+    .dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      flex: none;
+    }
+
+    .dot.research { background: var(--research); }
+    .dot.design { background: var(--design); }
+    .dot.build { background: var(--build); }
+    .dot.facilitate { background: var(--facilitate); }
+
+    .table-scroll {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.95rem;
+    }
+
+    caption {
+      caption-side: bottom;
+      padding: 10px 14px 12px;
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    thead th {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #f3eee6;
+    }
+
+    tbody th,
+    thead th:first-child,
+    td.missing,
+    tfoot th {
+      text-align: left;
+    }
+
+    tbody th { font-weight: 600; }
+
+    tbody tr:last-child td,
+    tbody tr:last-child th { border-bottom: none; }
+
+    tfoot th,
+    tfoot td {
+      border-top: 1px solid var(--line-strong);
+      border-bottom: none;
+      font-weight: 650;
+      background: #f6f1ea;
+    }
+
+    td.zero {
+      color: var(--missing);
+      font-weight: 700;
+    }
+
+    tr.short th,
+    tr.short td { background: #fbf6ee; }
+
+    .groups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .card {
+      height: 100%;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      border-left-width: 4px;
+      padding: 16px 16px 8px;
+      scroll-margin-top: 16px;
+    }
+
+    .card.complete { border-left-color: var(--complete); }
+    .card.short { border-left-color: #c47a32; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .size {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status {
+      display: inline-block;
+      margin: 8px 0 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .status.complete {
+      background: var(--complete-bg);
+      color: var(--complete);
+    }
+
+    .status.short {
+      background: var(--missing-bg);
+      color: var(--missing);
+    }
+
+    .mix {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+      margin: 0 0 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      list-style: none;
+      font-size: 0.9rem;
+    }
+
+    .mix li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mix .count {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+
+    .mix li.is-zero { color: var(--missing); }
+    .mix li.is-zero .dot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--missing); }
+
+    .roster {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .roster li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee6dc;
+    }
+
+    .roster li:last-child { border-bottom: none; }
+
+    .name { font-weight: 550; }
+
+    .kind {
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .kind.research { color: var(--research); }
+    .kind.design { color: var(--design); }
+    .kind.build { color: var(--build); }
+    .kind.facilitate { color: var(--facilitate); }
+
+    .colophon {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 800px) {
+      .metrics,
+      .gaps,
+      .groups { grid-template-columns: 1fr 1fr; }
+
+      .metrics div:nth-child(odd) { padding-left: 0; border-left: none; }
+      .metrics div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+      .metrics div { padding-top: 14px; padding-bottom: 14px; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { padding: 20px 16px 48px; }
+      .metrics,
+      .gaps,
+      .groups { grid-template-columns: 1fr; }
+      .metrics div + div { border-left: none; padding-left: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#groups">Skip to students</a>
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker">Thursday studio · Section B</p>
+      <h1>Group assignments</h1>
+      <p class="lede">Thirty students placed in eight groups. Each student has one kind. A group is complete when all four kinds are present.</p>
+      <p class="example-tag">Example data</p>
+    </header>
+
+    <main>
+      <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Distribution</h2>
+        <p class="section-lead">Six groups have 4 students and two have 3. Five groups are missing a kind, and each of those five is missing only one.</p>
+
+        <dl class="metrics">
+          <div>
+            <dt>Groups</dt>
+            <dd>8</dd>
+          </div>
+          <div>
+            <dt>Students</dt>
+            <dd>30</dd>
+          </div>
+          <div>
+            <dt>Group sizes</dt>
+            <dd>4 <span class="unit">and</span> 3</dd>
+            <dd class="fine">6 groups of 4 · 2 groups of 3</dd>
+          </div>
+          <div class="attention">
+            <dt>Missing a kind</dt>
+            <dd>5 <span class="unit">groups</span></dd>
+            <dd class="fine">Groups 2, 4, 5, 7, and 8</dd>
+          </div>
+        </dl>
+
+        <ul class="gaps">
+          <li>
+            <span class="kind-name"><span class="dot research" aria-hidden="true"></span> Research</span>
+            <span class="detail">In all 8 groups</span>
+          </li>
+          <li class="short">
+            <span class="kind-name"><span class="dot design" aria-hidden="true"></span> Design</span>
+            <span class="detail">Missing from 1 group</span>
+          </li>
+          <li class="short">
+            <span class="kind-name"><span class="dot build" aria-hidden="true"></span> Build</span>
+            <span class="detail">Missing from 2 groups</span>
+          </li>
+          <li class="short">
+            <span class="kind-name"><span class="dot facilitate" aria-hidden="true"></span> Facilitate</span>
+            <span class="detail">Missing from 2 groups</span>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="mix-heading">
+        <h2 id="mix-heading">Mix by group</h2>
+        <p class="section-lead">How many students of each kind sit in each group. A zero is a kind that group does not have.</p>
+        <div class="table-scroll">
+          <table>
+            <caption>Kind counts across the eight groups. Research 8, Design 8, Build 8, Facilitate 6.</caption>
+            <thead>
+              <tr>
+                <th scope="col">Group</th>
+                <th scope="col">Students</th>
+                <th scope="col">Research</th>
+                <th scope="col">Design</th>
+                <th scope="col">Build</th>
+                <th scope="col">Facilitate</th>
+                <th scope="col">Missing</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><a href="#group-1">1</a></th>
+                <td>4</td><td>1</td><td>1</td><td>1</td><td>1</td>
+                <td class="missing">None</td>
+              </tr>
+              <tr class="short">
+                <th scope="row"><a href="#group-2">2</a></th>
+                <td>4</td><td>1</td><td>1</td><td>2</td><td class="zero">0</td>
+                <td class="missing">Facilitate</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#group-3">3</a></th>
+                <td>4</td><td>1</td><td>1</td><td>1</td><td>1</td>
+                <td class="missing">None</td>
+              </tr>
+              <tr class="short">
+                <th scope="row"><a href="#group-4">4</a></th>
+                <td>4</td><td>1</td><td>2</td><td class="zero">0</td><td>1</td>
+                <td class="missing">Build</td>
+              </tr>
+              <tr class="short">
+                <th scope="row"><a href="#group-5">5</a></th>
+                <td>4</td><td>1</td><td class="zero">0</td><td>2</td><td>1</td>
+                <td class="missing">Design</td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="#group-6">6</a></th>
+                <td>4</td><td>1</td><td>1</td><td>1</td><td>1</td>
+                <td class="missing">None</td>
+              </tr>
+              <tr class="short">
+                <th scope="row"><a href="#group-7">7</a></th>
+                <td>3</td><td>1</td><td>1</td><td class="zero">0</td><td>1</td>
+                <td class="missing">Build</td>
+              </tr>
+              <tr class="short">
+                <th scope="row"><a href="#group-8">8</a></th>
+                <td>3</td><td>1</td><td>1</td><td>1</td><td class="zero">0</td>
+                <td class="missing">Facilitate</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">All groups</th>
+                <td>30</td><td>8</td><td>8</td><td>8</td><td>6</td>
+                <td>5 groups</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="groups-heading">
+        <h2 id="groups-heading">Students by group</h2>
+        <p class="section-lead">Names as assigned. The kind beside each name is what that student contributes to the mix above.</p>
+        <ol class="groups" id="groups">
+          <li>
+            <article class="card complete" id="group-1">
+              <div class="card-top">
+                <h3>Group 1</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status complete">All four kinds present</p>
+              <ul class="mix" aria-label="Kind mix for group 1">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">1</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Maya Chen</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Luis Ortega</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Priya Shah</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Jonah Blake</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card short" id="group-2">
+              <div class="card-top">
+                <h3>Group 2</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status short">Missing Facilitate</p>
+              <ul class="mix" aria-label="Kind mix for group 2">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">2</span></li>
+                <li class="is-zero"><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">0</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Amara Nwosu</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Elena Vasquez</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Theo Park</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Samir Rahman</span> <span class="kind build">Build</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card complete" id="group-3">
+              <div class="card-top">
+                <h3>Group 3</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status complete">All four kinds present</p>
+              <ul class="mix" aria-label="Kind mix for group 3">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">1</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Hana Ito</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Caleb Brooks</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Noor Al-Hassan</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Freya Lindstrom</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card short" id="group-4">
+              <div class="card-top">
+                <h3>Group 4</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status short">Missing Build</p>
+              <ul class="mix" aria-label="Kind mix for group 4">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">2</span></li>
+                <li class="is-zero"><span class="dot build" aria-hidden="true"></span> Build <span class="count">0</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Diego Morales</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Aisha Mensah</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Owen Clarke</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Mei Lin</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card short" id="group-5">
+              <div class="card-top">
+                <h3>Group 5</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status short">Missing Design</p>
+              <ul class="mix" aria-label="Kind mix for group 5">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li class="is-zero"><span class="dot design" aria-hidden="true"></span> Design <span class="count">0</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">2</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Sofia Petrov</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Jamal Wright</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Ingrid Solberg</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Leo Moretti</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card complete" id="group-6">
+              <div class="card-top">
+                <h3>Group 6</h3>
+                <p class="size">4 students</p>
+              </div>
+              <p class="status complete">All four kinds present</p>
+              <ul class="mix" aria-label="Kind mix for group 6">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">1</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Yuki Tanaka</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Nadia Okonkwo</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Felix Andersen</span> <span class="kind build">Build</span></li>
+                <li><span class="name">Rosa Delgado</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card short" id="group-7">
+              <div class="card-top">
+                <h3>Group 7</h3>
+                <p class="size">3 students</p>
+              </div>
+              <p class="status short">Missing Build</p>
+              <ul class="mix" aria-label="Kind mix for group 7">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li class="is-zero"><span class="dot build" aria-hidden="true"></span> Build <span class="count">0</span></li>
+                <li><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">1</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Hassan Ali</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Chloe Nguyen</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Marcus Bell</span> <span class="kind facilitate">Facilitate</span></li>
+              </ul>
+            </article>
+          </li>
+          <li>
+            <article class="card short" id="group-8">
+              <div class="card-top">
+                <h3>Group 8</h3>
+                <p class="size">3 students</p>
+              </div>
+              <p class="status short">Missing Facilitate</p>
+              <ul class="mix" aria-label="Kind mix for group 8">
+                <li><span class="dot research" aria-hidden="true"></span> Research <span class="count">1</span></li>
+                <li><span class="dot design" aria-hidden="true"></span> Design <span class="count">1</span></li>
+                <li><span class="dot build" aria-hidden="true"></span> Build <span class="count">1</span></li>
+                <li class="is-zero"><span class="dot facilitate" aria-hidden="true"></span> Facilitate <span class="count">0</span></li>
+              </ul>
+              <ul class="roster">
+                <li><span class="name">Anika Reddy</span> <span class="kind research">Research</span></li>
+                <li><span class="name">Ben Carter</span> <span class="kind design">Design</span></li>
+                <li><span class="name">Lila Kowalski</span> <span class="kind build">Build</span></li>
+              </ul>
+            </article>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <p class="colophon">Example assignment held in this file. Eight groups, thirty students, four kinds.</p>
+  </div>
+</body>
+</html>

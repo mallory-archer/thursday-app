@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Group assignments</title>
+  <meta name="description" content="Group assignments, with size, cluster mix, and missing-cluster summary.">
+  <style>
+    :root {
+      --bg: #e9e2d6;
+      --paper: #fbf8f3;
+      --ink: #1d1916;
+      --muted: #5c534b;
+      --faint: #8a7f74;
+      --line: #d8cec1;
+      --line-strong: #1d1916;
+      --complete: #1c5c40;
+      --complete-bg: #e7f3ec;
+      --missing: #6f3d0d;
+      --missing-bg: #f8efe3;
+      --research: #1a4f86;
+      --design: #a3471e;
+      --build: #265c42;
+      --facilitate: #5c4574;
+      --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+      --sans: "Avenir Next", "Segoe UI", sans-serif;
+      --cluster-cols: 3;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 1.0625rem;
+      line-height: 1.5;
+    }
+
+    .skip {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      transform: translateY(-160%);
+      background: var(--ink);
+      color: var(--paper);
+      padding: 8px 12px;
+      z-index: 2;
+    }
+
+    .skip:focus { transform: none; }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 36px 24px 72px;
+    }
+
+    a {
+      color: inherit;
+      text-underline-offset: 3px;
+    }
+
+    a:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 3px;
+    }
+
+    .page-head {
+      border-top: 4px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+      padding: 26px 0 20px;
+      margin-bottom: 32px;
+    }
+
+    .kicker {
+      margin: 0 0 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.02;
+    }
+
+    .lede {
+      max-width: 40rem;
+      margin: 14px 0 0;
+      color: var(--muted);
+    }
+
+    section { margin-top: 40px; }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 0.75rem;
+      font-weight: 650;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .section-lead {
+      margin: 0 0 18px;
+      max-width: 42rem;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      margin: 0;
+      border-top: 1px solid var(--line-strong);
+      border-bottom: 1px solid var(--line-strong);
+    }
+
+    .metrics div {
+      margin: 0;
+      padding: 16px 18px 14px 0;
+    }
+
+    .metrics div + div {
+      padding-left: 18px;
+      border-left: 1px solid var(--line);
+    }
+
+    .metrics dt {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .metrics dd {
+      margin: 4px 0 0;
+      font-family: var(--serif);
+      font-size: 2.6rem;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    .metrics .unit {
+      font-family: var(--sans);
+      font-size: 1rem;
+      letter-spacing: 0;
+      color: var(--muted);
+    }
+
+    .metrics dd.fine {
+      margin: 8px 0 0;
+      font-family: var(--sans);
+      font-size: 0.875rem;
+      letter-spacing: 0;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .metrics .attention dd { color: var(--missing); }
+
+    .gaps {
+      display: grid;
+      grid-template-columns: repeat(var(--cluster-cols), 1fr);
+      gap: 10px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .gaps li {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+    }
+
+    .gaps .kind-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .gaps .detail {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .gaps .short .detail { color: var(--missing); }
+
+    .dot {
+      width: 0.65rem;
+      height: 0.65rem;
+      border-radius: 50%;
+      flex: none;
+      background: var(--faint);
+    }
+
+    .dot.c0 { background: var(--research); }
+    .dot.c1 { background: var(--design); }
+    .dot.c2 { background: var(--build); }
+    .dot.c3 { background: var(--facilitate); }
+
+    .table-scroll {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-variant-numeric: tabular-nums;
+      font-size: 0.95rem;
+    }
+
+    caption {
+      caption-side: bottom;
+      padding: 10px 14px 12px;
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+
+    thead th {
+      font-size: 0.72rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: #f3eee6;
+    }
+
+    tbody th,
+    thead th:first-child,
+    td.missing,
+    tfoot th { text-align: left; }
+
+    tbody th { font-weight: 600; }
+
+    tbody tr:last-child td,
+    tbody tr:last-child th { border-bottom: none; }
+
+    tfoot th,
+    tfoot td {
+      border-top: 1px solid var(--line-strong);
+      border-bottom: none;
+      font-weight: 650;
+      background: #f6f1ea;
+    }
+
+    td.zero {
+      color: var(--missing);
+      font-weight: 700;
+    }
+
+    tr.short th,
+    tr.short td { background: #fbf6ee; }
+
+    .groups {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .card {
+      height: 100%;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      border-left-width: 4px;
+      padding: 16px 16px 8px;
+      scroll-margin-top: 16px;
+    }
+
+    .card.complete { border-left-color: var(--complete); }
+    .card.short { border-left-color: #c47a32; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .card h3 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 1.55rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .size {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .status {
+      display: inline-block;
+      margin: 8px 0 12px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .status.complete {
+      background: var(--complete-bg);
+      color: var(--complete);
+    }
+
+    .status.short {
+      background: var(--missing-bg);
+      color: var(--missing);
+    }
+
+    .mix {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 16px;
+      margin: 0 0 12px;
+      padding: 10px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      list-style: none;
+      font-size: 0.9rem;
+    }
+
+    .mix li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mix .count {
+      margin-left: auto;
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+
+    .mix li.is-zero { color: var(--missing); }
+    .mix li.is-zero .dot {
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px var(--missing);
+    }
+
+    .roster {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .roster li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee6dc;
+    }
+
+    .roster li:last-child { border-bottom: none; }
+
+    .name { font-weight: 550; }
+
+    .colophon {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 800px) {
+      .metrics,
+      .gaps,
+      .groups { grid-template-columns: 1fr 1fr; }
+
+      .metrics div:nth-child(odd) { padding-left: 0; border-left: none; }
+      .metrics div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+      .metrics div { padding-top: 14px; padding-bottom: 14px; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { padding: 20px 16px 48px; }
+      .metrics,
+      .gaps,
+      .groups { grid-template-columns: 1fr; }
+      .metrics div + div {
+        border-left: none;
+        padding-left: 0;
+        border-top: 1px solid var(--line);
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#groups">Skip to students</a>
+  <div class="wrap">
+    <header class="page-head">
+      <p class="kicker"><a href="/">Class</a></p>
+      <h1>Group assignments</h1>
+      <p class="lede" id="lede">Loading groups…</p>
+    </header>
+
+    <main id="main" hidden>
+      <section aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Distribution</h2>
+        <p class="section-lead" id="distribution-lead"></p>
+        <dl class="metrics" id="metrics"></dl>
+        <ul class="gaps" id="gaps"></ul>
+      </section>
+
+      <section aria-labelledby="mix-heading">
+        <h2 id="mix-heading">Mix by group</h2>
+        <p class="section-lead">How many students of each cluster sit in each group. A zero is a cluster that group does not have.</p>
+        <div class="table-scroll">
+          <table>
+            <caption id="mix-caption"></caption>
+            <thead id="mix-head"></thead>
+            <tbody id="mix-body"></tbody>
+            <tfoot id="mix-foot"></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section aria-labelledby="groups-heading">
+        <h2 id="groups-heading">Students by group</h2>
+        <p class="section-lead">Names as assigned. The counts above are how many students in the group come from each cluster.</p>
+        <ol class="groups" id="groups"></ol>
+      </section>
+
+      <p class="colophon" id="colophon"></p>
+    </main>
+  </div>
+  <script src="/static/groups.js"></script>
+</body>
+</html>
