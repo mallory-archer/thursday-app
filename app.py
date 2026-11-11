@@ -8,9 +8,6 @@ from pathlib import Path
 import psycopg
 from flask import Flask, jsonify, send_from_directory
 
-from assignment_rules import assign_groups
-from cluster_model import CENTROIDS
-
 ROOT = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder="static")
 
@@ -44,11 +41,6 @@ def index():
     return send_from_directory(app.static_folder, "index.html")
 
 
-@app.get("/groups")
-def group_assignments():
-    return send_from_directory(app.static_folder, "groups.html")
-
-
 @app.get("/api/students")
 def student_names():
     with psycopg.connect(database_url(), connect_timeout=20) as conn:
@@ -56,93 +48,6 @@ def student_names():
             cur.execute("SELECT name FROM students ORDER BY name")
             names = [row[0] for row in cur.fetchall()]
     return jsonify([{"name": name} for name in names])
-
-
-@app.get("/api/groups")
-def groups():
-    with psycopg.connect(database_url(), connect_timeout=20) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT netid, name, skill_programming, skill_data_stats,
-                       skill_frontend_design, skill_business_pitch
-                FROM students
-                ORDER BY netid
-                """
-            )
-            rows = cur.fetchall()
-
-    names_by_netid = {}
-    students = []
-    for (
-        netid,
-        name,
-        skill_programming,
-        skill_data_stats,
-        skill_frontend_design,
-        skill_business_pitch,
-    ) in rows:
-        names_by_netid[netid] = name
-        students.append(
-            {
-                "id": netid,
-                "skill_programming": skill_programming,
-                "skill_data_stats": skill_data_stats,
-                "skill_frontend_design": skill_frontend_design,
-                "skill_business_pitch": skill_business_pitch,
-            }
-        )
-
-    assignments = assign_groups(students)
-    n_groups = 8
-    cluster_ids = range(len(CENTROIDS))
-    members = {group: [] for group in range(1, n_groups + 1)}
-    counts = {
-        group: {cluster: 0 for cluster in cluster_ids}
-        for group in range(1, n_groups + 1)
-    }
-    cluster_sizes = {cluster: 0 for cluster in cluster_ids}
-
-    for assignment in assignments:
-        group = assignment["group"]
-        cluster = assignment["cluster"]
-        members[group].append(names_by_netid[assignment["id"]])
-        counts[group][cluster] += 1
-        cluster_sizes[cluster] += 1
-
-    present = {cluster for cluster, size in cluster_sizes.items() if size}
-    groups_payload = []
-    groups_missing_a_cluster = 0
-    for group in range(1, n_groups + 1):
-        cluster_counts = [
-            {"cluster": cluster, "count": counts[group][cluster]}
-            for cluster in cluster_ids
-        ]
-        if any(counts[group][cluster] == 0 for cluster in present):
-            groups_missing_a_cluster += 1
-        groups_payload.append(
-            {
-                "group": group,
-                "members": members[group],
-                "cluster_counts": cluster_counts,
-            }
-        )
-
-    return jsonify(
-        {
-            "n_groups": n_groups,
-            "groups": groups_payload,
-            "clusters": [
-                {
-                    "cluster": cluster,
-                    "students": cluster_sizes[cluster],
-                    "centroid": list(centroid),
-                }
-                for cluster, centroid in enumerate(CENTROIDS)
-            ],
-            "groups_missing_a_cluster": groups_missing_a_cluster,
-        }
-    )
 
 
 if __name__ == "__main__":

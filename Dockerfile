@@ -9,9 +9,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
-COPY cluster_model.py .
-COPY assignment_rules.py .
-COPY model ./model
 COPY static ./static
 
 EXPOSE 8080
